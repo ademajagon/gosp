@@ -26,7 +26,7 @@ func (p *Parser) parseToken() (types.Expr, error) {
 
 	switch tok {
 	case "(":
-		var list []types.Expr
+		var list types.List
 		for {
 			if p.pos >= len(p.tokens) {
 				return nil, errors.New("missing ')'")
@@ -47,9 +47,9 @@ func (p *Parser) parseToken() (types.Expr, error) {
 		return nil, errors.New("unexcepted ')'")
 	default:
 		if i, err := strconv.Atoi(string(tok)); err == nil {
-			return i, nil
+			return types.Number(i), nil
 		}
-		return string(tok), nil
+		return types.Symbol(tok), nil
 	}
 }
 

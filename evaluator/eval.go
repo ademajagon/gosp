@@ -7,69 +7,86 @@ import (
 	"github.com/ademajagon/gosp/types"
 )
 
-type Env map[string]func(args []types.Expr) (types.Expr, error)
+type Environment struct {
+	parent *Environment
+	vars   map[types.Symbol]types.Expr
+}
 
-var DefaultEnv Env
-
-func NewDefaultEnv() Env {
-
-	env := Env{}
-
-	env["+"] = func(args []types.Expr) (types.Expr, error) {
-		sum := 0
-		for _, arg := range args {
-			val, err := Eval(arg, env)
-			if err != nil {
-				return nil, err
-			}
-			i, ok := val.(int)
-			if !ok {
-				return nil, fmt.Errorf("expected int, got %T", val)
-			}
-			sum += i
-		}
-		return sum, nil
+func NewDefaultEnv() *Environment {
+	env := &Environment{
+		vars: make(map[types.Symbol]types.Expr),
 	}
 
-	env["*"] = func(args []types.Expr) (types.Expr, error) {
-		prod := 1
-		for _, arg := range args {
-			val, err := Eval(arg, env)
-			if err != nil {
-				return nil, err
-			}
-			i, ok := val.(int)
-			if !ok {
-				return nil, fmt.Errorf("expected int, got %T", val)
-			}
-			prod *= i
-		}
-		return prod, nil
-	}
+	env.vars["+"] = types.Function(add)
+	env.vars["-"] = types.Function(sub)
 
 	return env
 }
 
-func Eval(expr types.Expr, env Env) (types.Expr, error) {
-	switch e := expr.(type) {
-	case int:
-		return e, nil
-	case string:
-		return e, nil
-	case []types.Expr:
-		if len(e) == 0 {
-			return nil, errors.New("empty list")
-		}
-		fnSym, ok := e[0].(string)
-		if !ok {
-			return nil, errors.New("first element must be a function name")
-		}
-		fn, ok := env[fnSym]
-		if !ok {
-			return nil, fmt.Errorf("unknown function: %s", fnSym)
-		}
-		return fn(e[1:])
-	default:
-		return nil, fmt.Errorf("unknown expression type: %T", expr)
+func (e *Environment) Lookup(sym types.Symbol) (types.Expr, bool) {
+	val, ok := e.vars[sym]
+	if !ok && e.parent != nil {
+		return e.parent.Lookup(sym)
 	}
+	return val, ok
+}
+
+func Eval(expr types.Expr, env *Environment) (types.Expr, error) {
+	switch e := expr.(type) {
+	case types.Number:
+		return e, nil
+	case types.Symbol:
+		if val, ok := env.Lookup(e); ok {
+			return val, nil
+		}
+		return nil, fmt.Errorf("undefined symbol: %s", e)
+	default:
+		return nil, fmt.Errorf("cannot evaluate %T", expr)
+	}
+}
+
+func add(args ...types.Expr) (types.Expr, error) {
+	if len(args) == 0 {
+		return nil, errors.New("+ requires at least one argument")
+	}
+
+	var sum float64
+	for i, arg := range args {
+		num, ok := arg.(types.Number)
+		if !ok {
+			return nil, fmt.Errorf("argument %d to + is not a number: %v", i, arg)
+		}
+		sum += float64(num)
+	}
+	return types.Number(sum), nil
+}
+
+func sub(args ...types.Expr) (types.Expr, error) {
+	if len(args) == 0 {
+		return nil, errors.New("- requires at least one argument")
+	}
+
+	if len(args) == 1 {
+		num, ok := args[0].(types.Number)
+		if !ok {
+			return nil, fmt.Errorf("argument to - is not a number: %v", args[0])
+		}
+		return types.Number(-float64(num)), nil
+	}
+
+	var result float64
+	num, ok := args[0].(types.Number)
+	if !ok {
+		return nil, fmt.Errorf("first argument to - is not a number: %v", args[0])
+	}
+	result = float64(num)
+
+	for i, arg := range args[1:] {
+		num, ok := arg.(types.Number)
+		if !ok {
+			return nil, fmt.Errorf("argument %d to - is not a number: %v", i+1, arg)
+		}
+		result -= float64(num)
+	}
+	return types.Number(result), nil
 }
