@@ -40,9 +40,37 @@ func Eval(expr types.Expr, env *Environment) (types.Expr, error) {
 			return val, nil
 		}
 		return nil, fmt.Errorf("undefined symbol: %s", e)
+	case types.List:
+		if len(e) == 0 {
+			return nil, errors.New("empty list")
+		}
+		return evalList(e, env)
 	default:
 		return nil, fmt.Errorf("cannot evaluate %T", expr)
 	}
+}
+
+func evalList(list types.List, env *Environment) (types.Expr, error) {
+	fnExpr, err := Eval(list[0], env)
+	if err != nil {
+		return nil, err
+	}
+
+	fn, ok := fnExpr.(types.Function)
+	if !ok {
+		return nil, fmt.Errorf("first list element must be a function, got %T", fnExpr)
+	}
+
+	args := make([]types.Expr, 0, len(list)-1)
+	for _, arg := range list[1:] {
+		evalArg, err := Eval(arg, env)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, evalArg)
+	}
+
+	return fn(args...)
 }
 
 func add(args ...types.Expr) (types.Expr, error) {
