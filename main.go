@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ademajagon/gosp/evaluator"
 	"github.com/ademajagon/gosp/parser"
@@ -16,7 +17,7 @@ func main() {
 		return
 	}
 
-	code := os.Args[1]
+	code := strings.Join(os.Args[1:], " ")
 	tokens := scanner.Scan(code)
 
 	p := parser.New(tokens)
