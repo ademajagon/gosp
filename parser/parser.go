@@ -18,7 +18,7 @@ func New(tokens []types.Token) *Parser {
 
 func (p *Parser) parseToken() (types.Expr, error) {
 	if p.pos >= len(p.tokens) {
-		return nil, errors.New("unexcepted end of input")
+		return nil, errors.New("unexpected end of input")
 	}
 
 	tok := p.tokens[p.pos]
@@ -44,7 +44,7 @@ func (p *Parser) parseToken() (types.Expr, error) {
 		}
 		return list, nil
 	case ")":
-		return nil, errors.New("unexcepted ')'")
+		return nil, errors.New("unexpected ')'")
 	default:
 		if i, err := strconv.Atoi(string(tok)); err == nil {
 			return types.Number(i), nil

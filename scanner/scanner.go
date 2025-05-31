@@ -22,7 +22,7 @@ func Scan(input string) []types.Token {
 		switch {
 		case unicode.IsSpace(r):
 			addToken()
-		case r == '(' || r == ')':
+		case strings.ContainsRune("()", r):
 			addToken()
 			tokens = append(tokens, types.Token(string(r)))
 		default:

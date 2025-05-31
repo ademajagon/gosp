@@ -13,7 +13,7 @@ import (
 func main() {
 
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: gosp <lisp-expression>")
+		fmt.Fprintln(os.Stderr, "Usage: gosp <lisp-expression>")
 		return
 	}
 
