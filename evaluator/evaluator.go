@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ademajagon/gosp/global"
 	"github.com/ademajagon/gosp/types"
 )
 
@@ -53,6 +54,8 @@ func Eval(expr types.Expr, env *Environment) (types.Expr, error) {
 }
 
 func evalList(list types.List, env *Environment) (types.Expr, error) {
+	global.Log("Evaluating list:", list)
+
 	fnExpr, err := Eval(list[0], env)
 	if err != nil {
 		return nil, err
@@ -65,12 +68,16 @@ func evalList(list types.List, env *Environment) (types.Expr, error) {
 
 	args := make([]types.Expr, 0, len(list)-1)
 	for _, arg := range list[1:] {
+		global.Log("Evaluating argument:", arg)
 		evalArg, err := Eval(arg, env)
 		if err != nil {
 			return nil, err
 		}
+		global.Log("Evaluated to:", evalArg)
 		args = append(args, evalArg)
 	}
+
+	global.Log("Calling function with arguments:", args)
 
 	return fn(args...)
 }
